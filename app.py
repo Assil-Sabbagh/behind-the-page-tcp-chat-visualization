@@ -4,7 +4,7 @@ app.py - Flask + Flask-SocketIO Web Application
 This file is the bridge between:
   1. The raw TCP server (server.py)  — handles real socket communication
   2. The web browser (index.html)    — displays the chat UI and dashboard
-
+ 
 Role of Flask here:
   - Serve the HTML page
   - Use Flask-SocketIO (WebSocket) ONLY for browser ↔ web-server communication
