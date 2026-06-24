@@ -7,7 +7,7 @@ which connects to the TCP server using raw Python sockets.
 
 Socket operations used here:
   - socket()   : Create a TCP socket
-  - connect()  : Connect to the server's IP:port
+  - connect()  : Connect to the server's IP:port 
   - send()     : Send JSON-encoded messages to the server
   - recv()     : Receive messages from the server (in a background thread)
   - close()    : Clean up when the user disconnects
