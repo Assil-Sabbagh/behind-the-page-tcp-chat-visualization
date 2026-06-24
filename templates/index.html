@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Behind The Page — TCP Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════════ -->
+<header class="site-header">
+  <div class="header-logo">
+    <span class="logo-icon">⬡</span>
+    <span class="logo-text">Behind <span class="accent">The Page</span></span>
+  </div>
+  <div class="header-meta">
+    <span class="tag">TCP Chat</span>
+    <span class="tag">Python Sockets</span>
+    <div class="server-indicator" id="serverIndicator">
+      <span class="dot"></span> Server Online
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN LAYOUT: LEFT = CHAT | RIGHT = DASHBOARD
+══════════════════════════════════════════════════════════ -->
+<main class="app-layout">
+
+  <!-- ─── LEFT PANEL: CHAT ──────────────────────────────── -->
+  <section class="panel chat-panel">
+    <div class="panel-header">
+      <h2>Chat Room</h2>
+      <div id="chatStatus" class="status-badge offline">Disconnected</div>
+    </div>
+
+    <!-- JOIN FORM -->
+    <div id="joinScreen" class="join-screen">
+      <div class="join-card">
+        <div class="join-icon">🔌</div>
+        <h3>Connect to TCP Server</h3>
+        <p>Enter a username to join the chat. A TCP socket will be created and connected to the server.</p>
+        <div class="input-group">
+          <input
+            type="text"
+            id="usernameInput"
+            placeholder="Your username…"
+            maxlength="20"
+            autocomplete="off"
+          />
+          <button id="joinBtn" class="btn-primary">Connect</button>
+        </div>
+        <div id="joinError" class="error-msg" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- CHAT INTERFACE -->
+    <div id="chatScreen" class="chat-screen" style="display:none">
+      <div class="chat-meta-bar">
+        <span id="connectedAs">Connected as <strong></strong></span>
+        <span id="onlineCount" class="online-pill">0 online</span>
+      </div>
+
+      <div id="messageBox" class="message-box">
+        <div class="chat-welcome">
+          <span>⬡</span> TCP connection established. Messages are flowing through Python sockets.
+        </div>
+      </div>
+
+      <div class="message-input-bar">
+        <input
+          type="text"
+          id="msgInput"
+          placeholder="Type a message and press Enter…"
+          maxlength="500"
+          autocomplete="off"
+        />
+        <button id="sendBtn" class="btn-send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── RIGHT PANEL: TCP DASHBOARD ───────────────────── -->
+  <section class="panel dashboard-panel">
+    <div class="panel-header">
+      <h2>TCP Visualization</h2>
+      <span class="tag">Live</span>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="statClients">0</div>
+        <div class="stat-label">Active Clients</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statMessages">0</div>
+        <div class="stat-label">Messages Sent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statConnections">0</div>
+        <div class="stat-label">Total Connections</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statUptime">0s</div>
+        <div class="stat-label">Server Uptime</div>
+      </div>
+    </div>
+
+    <!-- TCP HANDSHAKE VISUALIZER -->
+    <div class="dash-card">
+      <div class="dash-card-title">
+        <span class="dash-icon">🤝</span> TCP 3-Way Handshake
+      </div>
+      <div class="handshake-diagram" id="handshakeDiagram">
+        <div class="hs-actor">
+          <div class="hs-label">CLIENT</div>
+          <div class="hs-line"></div>
+        </div>
+        <div class="hs-steps">
+          <div class="hs-step" id="hsSyn">
+            <span class="hs-arrow">SYN ──────→</span>
+            <span class="hs-desc">Socket created & connect() called</span>
+          </div>
+          <div class="hs-step" id="hsSynAck">
+            <span class="hs-arrow">←── SYN-ACK</span>
+            <span class="hs-desc">Server acknowledges</span>
+          </div>
+          <div class="hs-step" id="hsAck">
+            <span class="hs-arrow">ACK ──────→</span>
+            <span class="hs-desc">Connection confirmed</span>
+          </div>
+          <div class="hs-step hs-established" id="hsEstablished">
+            <span class="hs-arrow">✓ Connection Established</span>
+            <span class="hs-desc">accept() returned — chat ready</span>
+          </div>
+        </div>
+        <div class="hs-actor">
+          <div class="hs-label">SERVER</div>
+          <div class="hs-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOCKET OPERATIONS FLOW -->
+    <div class="dash-card">
+      <div class="dash-card-title">
+        <span class="dash-icon">⚡</span> Socket Operations
+      </div>
+      <div class="ops-grid">
+        <div class="op-badge" id="op-socket_create" data-op="socket()">socket()</div>
+        <div class="op-badge" id="op-bind" data-op="bind()">bind()</div>
+        <div class="op-badge" id="op-listen" data-op="listen()">listen()</div>
+        <div class="op-badge" id="op-accept" data-op="accept()">accept()</div>
+        <div class="op-badge" id="op-connect" data-op="connect()">connect()</div>
+        <div class="op-badge" id="op-send" data-op="send()">send()</div>
+        <div class="op-badge" id="op-recv" data-op="recv()">recv()</div>
+        <div class="op-badge" id="op-close" data-op="close()">close()</div>
+      </div>
+    </div>
+
+    <!-- MESSAGE FLOW -->
+    <div class="dash-card">
+      <div class="dash-card-title">
+        <span class="dash-icon">📡</span> Message Flow
+      </div>
+      <div class="flow-diagram" id="flowDiagram">
+        <div class="flow-node flow-client" id="flowClient">Client<br/><small>send()</small></div>
+        <div class="flow-arrow" id="flowArrow1">→</div>
+        <div class="flow-node flow-server" id="flowServer">Server<br/><small>recv()</small></div>
+        <div class="flow-arrow" id="flowArrow2">→</div>
+        <div class="flow-node flow-others" id="flowOthers">Others<br/><small>recv()</small></div>
+      </div>
+    </div>
+
+    <!-- CONNECTED CLIENTS -->
+    <div class="dash-card">
+      <div class="dash-card-title">
+        <span class="dash-icon">👥</span> Connected Clients
+      </div>
+      <div id="clientList" class="client-list">
+        <div class="empty-state">No clients connected yet.</div>
+      </div>
+    </div>
+
+    <!-- LIVE EVENT LOG -->
+    <div class="dash-card event-log-card">
+      <div class="dash-card-title">
+        <span class="dash-icon">📋</span> Live Event Log
+        <button class="btn-clear" id="clearLogBtn">Clear</button>
+      </div>
+      <div id="eventLog" class="event-log"></div>
+    </div>
+
+  </section>
+</main>
+
+<!-- ─── SOCKET.IO + JS ──────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
