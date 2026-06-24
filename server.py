@@ -4,7 +4,7 @@ server.py - Core TCP Server using Python's socket library
 This is the heart of the project. It demonstrates raw TCP socket programming:
   - socket()   : Creates a TCP socket
   - bind()     : Binds the socket to an IP and port
-  - listen()   : Puts the socket in listening mode for incoming connections
+  - listen()   : Puts the socket in listening mode for incoming connections 
   - accept()   : Accepts a new client connection (blocking call)
   - recv()     : Receives data from a connected client
   - send()     : Sends data to a connected client
